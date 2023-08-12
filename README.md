@@ -11,10 +11,7 @@ Requirements
 Before run
 ---
 1. Copy music folder link
-2. Get Genius API key:
-  2.1. Goto https://docs.genius.com/
-  2.2. Click "Authorize With Genius" in top section "These Docs are a Genius App"
-  2.3. After logining, see next section "Resources". Your API key is text after "Authorization: Bearer". Copy it
+2. Get Genius API key: goto https://docs.genius.com/. Click "Authorize With Genius" in top section "These Docs are a Genius App". After logining, see next section "Resources". Your API key is text after "Authorization: Bearer". Copy it
 
 Run
 ---
