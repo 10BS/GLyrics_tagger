@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import glob
 import mutagen as mg
 from lyricsgenius import Genius
 
@@ -8,19 +9,21 @@ EXTENSION = 'txt'
 
 
 # Getting the lyrics from Genius and saving them to .txt file
-def get_lyrics(file_path, extension):
+def get_lyrics(file_path=None, extension=EXTENSION):
     genius = Genius(f'{get_token()}')
     audio = mg.File(file_path)
     tag_title = audio['title'][0]
     tag_artist = audio['artist'][0]
     song = genius.search_song(title=tag_title, artist=tag_artist)
-    song.save_lyrics(filename=file_path,
+    if song != None:
+        song.save_lyrics(filename=file_path,
                      extension=extension,
                      sanitize=False)
-
-
+    else:
+        return None
+        
 # Text correction: removing unwanted data from .txt file
-def clean_lyrics(file_path, extension):
+def clean_lyrics(file_path, extension=EXTENSION):
     with open(f'{file_path}.{extension}', 'r', encoding='utf-8') as f:
         f4clean = f.read()
     clean = re.sub(r'^.*?(?=\[)|\d.*$', '', f4clean)
@@ -29,10 +32,11 @@ def clean_lyrics(file_path, extension):
 
 
 # Creating a "lyrics" tag in an audio file and adding lyrics to it from a .txt file
-def add_lyrics(file_path, extension):
+def add_lyrics(file_path, extension=EXTENSION):
     audio = mg.File(file_path)
-    with open(f'{file_path}.{extension}', 'r', encoding='utf-8') as f:
-        lyrics = f.read()
+    for f in glob.iglob(f'{get_location()}/*.{extension}'):
+        with open(f, 'r', encoding='utf-8') as f:
+            lyrics = f.read()
     audio['lyrics'] = lyrics
     audio.save()
 
@@ -70,24 +74,29 @@ def get_token():
 
 # Main function that run all needed functions
 def main():
-    if not check_cfg():
-        q = input('Configuration file not found. Create a new one? (y/n): ')
-        if q.lower() == 'y':
-            build_cfg()
-            print('The new configuration file has been created. The process will continue.')
-        elif q.lower() == 'n':
-            raise SystemExit('The process was cancelled.')
+    q = input('Search lyrics OR add existed texts to songs? [1/2]: ')
+    if q == '1':
+        if not check_cfg():
+            q1 = input('Configuration file not found. Create a new one? (y/n): ')
+            if q1.lower() == 'y':
+                build_cfg()
+                print('The new configuration file has been created. The process will continue.')
+            elif q1.lower() == 'n':
+                raise SystemExit('The process was cancelled.')
 
-    q1 = input('Add saved lyrics to audio file? (y/n): ')
-    for file in os.listdir(get_location()):
-        file_path = os.path.abspath(os.path.join(get_location(), file))
-
-        get_lyrics(file_path, extension=EXTENSION)
-        clean_lyrics(file_path, extension=EXTENSION)
-
-        if q1.lower() == 'y':
-            add_lyrics(file_path, extension=EXTENSION)
+        q2 = input('Add saved lyrics to audio file? (y/n): ')
+        for file in glob.iglob(f'{get_location()}/*.*'):
+            file_path = os.path.join(get_location(), file)
+            if get_lyrics(file_path) != None:
+                clean_lyrics(file_path)
+        if q2.lower() == 'y':
+            add_lyrics(file_path)
+    elif q == '2':
+        for file in glob.iglob(f'{get_location()}/*.*'):
+            file_path = os.path.join(get_location(), file)
+            add_lyrics(file_path)
 
 
 if __name__ == "__main__":
     main()
+    
